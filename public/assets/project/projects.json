@@ -1,0 +1,138 @@
+[
+  {
+    "title": "Flutter Frontend",
+    "desc": "A responsive and modern cross-platform mobile application interface built using Flutter.",
+    "tags": ["Flutter", "Dart", "UI/UX"],
+    "img": "/src/assets/flutter.png",
+    "repo": "https://github.com/Sehar-1207/Flutter-Frontend.git",
+    "category": "Frontend"
+  },
+  {
+    "title": "Resume Builder",
+    "desc": "An interactive web application designed to help users build, customize, and export professional resumes.",
+    "tags": ["React", "TypeScript", "Tailwind"],
+    "img": "/src/assets/resume.png",
+    "repo": "https://github.com/Sehar-1207/Resume-Builder.git",
+    "category": "Full Stack"
+  },
+  {
+    "title": "RecipeCorner",
+    "desc": "A decoupled food exploration platform featuring dynamic recipe management and rich user interactions.",
+    "tags": ["React", "ASP.NET Core", "JWT"],
+    "img": "/src/assets/recipie.png",
+    "repo": "https://github.com/Sehar-1207/RecipieCorner.git",
+    "category": "Full Stack"
+  },
+  {
+    "title": "BloggersCorner",
+    "desc": "A full-featured blogging content platform supporting markdown editing, comments, and post categorization.",
+    "tags": ["Next.js", "Tailwind", "Node.js"],
+    "img": "/src/assets/blog.png",
+    "repo": "https://github.com/Sehar-1207/BloggersCorner.git",
+    "category": "Full Stack"
+  },
+  {
+    "title": "QuizMaster",
+    "desc": "An interactive trivia and examination app with timed queries, instant scoring, and state tracking.",
+    "tags": ["React", "JavaScript", "CSS"],
+    "img": "/src/assets/quiz.png",
+    "repo": "https://github.com/Sehar-1207/QuizMaster.git",
+    "category": "Frontend"
+  },
+  {
+    "title": "Text Pilot React APP",
+    "desc": "A powerful utility application for real-time text analysis, transformation, and formatting operations.",
+    "tags": ["React", "JavaScript", "Tailwind"],
+    "img": "/src/assets/text.png",
+    "repo": "https://github.com/Sehar-1207/Text-Pilot-React-APP.git",
+    "category": "Frontend"
+  },
+  {
+    "title": "BookStoreApp",
+    "desc": "An e-commerce storefront layout featuring digital catalogs, shopping carts, and persistent order flows.",
+    "tags": ["Next.js", "Tailwind", "Context API"],
+    "img": "/src/assets/bookstore.png",
+    "repo": "https://github.com/Sehar-1207/BookStoreApp.git",
+    "category": "Full Stack"
+  },
+  {
+    "title": "FileUploader",
+    "desc": "An automated system handling chunked cloud file uploads, multi-part form validation, and storage tracking.",
+    "tags": ["ASP.NET Core", "React", "Cloud Storage"],
+    "img": "/src/assets/fileUploader.png",
+    "repo": "https://github.com/Sehar-1207/FileUploader.git",
+    "category": "Frontend"
+  },
+  {
+    "title": "Clean Architecture",
+    "desc": "A highly structured template decoupling core business rules from infrastructure layers using Domain-Driven Design.",
+    "tags": ["ASP.NET Core", "C#", "EF Core"],
+    "img": "/src/assets/clean.png",
+    "repo": "https://github.com/Sehar-1207/Clean-Architecture.git",
+    "category": "Backend"
+  },
+  {
+    "title": "React News App",
+    "desc": "A real-time news aggregation dashboard implementing custom infinite scrolling and category pagination.",
+    "tags": ["React", "NewsAPI", "Tailwind"],
+    "img": "/src/assets/news.png",
+    "repo": "https://github.com/Sehar-1207/React-News-App.git",
+    "category": "Frontend"
+  },
+  {
+    "title": "CrudEmployeeWithBlazor",
+    "desc": "A full enterprise employee directory implementing fast full-stack operations via interactive Blazor components.",
+    "tags": ["Blazor", "C#", "SQL Server"],
+    "img": "/src/assets/employee.png",
+    "repo": "https://github.com/Sehar-1207/CrudEmployeeWithBlazor.git",
+    "category": "Backend"
+  },
+  {
+    "title": "Ocelot WebApi Gateway",
+    "desc": "A unified entry-point proxy utilizing Ocelot to implement request routing and rate-limiting across microservices.",
+    "tags": ["ASP.NET Core", "Ocelot", "Microservices"],
+    "img": "/src/assets/ocelot.jpeg",
+    "repo": "https://github.com/Sehar-1207/Ocelot.WebApi.git",
+    "category": "Backend"
+  },
+  {
+    "title": "JwtImplementation",
+    "desc": "A security module managing robust cross-origin token workflows, token generation, and secure payload encoding.",
+    "tags": ["C#", "JWT", "Security"],
+    "img": "/src/assets/jwt.jpeg",
+    "repo": "https://github.com/Sehar-1207/JwtImplementation.git",
+    "category": "Backend"
+  },
+  {
+    "title": "AuthenticationApis",
+    "desc": "A foundational backend module hosting centralized user signup, login, password hashing, and token issuance services.",
+    "tags": ["ASP.NET Core", "Identity", "C#"],
+    "img": "/src/assets/email.jpg",
+    "repo": "https://github.com/Sehar-1207/AuthenticationApis.git",
+    "category": "Backend"
+  },
+  {
+    "title": "LibraryManagementSystem",
+    "desc": "A structured system managing physical books, inventory tracking, automated rentals, and member logs.",
+    "tags": ["C#", "EF Core", "SQL Server"],
+    "img": "/src/assets/library.png",
+    "repo": "https://github.com/Sehar-1207/LibraryManagementSystem.git",
+    "category": "Full Stack"
+  },
+  {
+    "title": "EducateMe Online",
+    "desc": "An interactive e-learning platform architecture with online course delivery pipelines and progress monitoring.",
+    "tags": ["React", "Node.js", "Express"],
+    "img": "/src/assets/education.png",
+    "repo": "https://github.com/Sehar-1207/EducateMe-online.git",
+    "category": "Frontend"
+  },
+  {
+    "title": "Youtube Clone",
+    "desc": "A video-streaming platform template focusing on interface layouts, video playback feeds, and interactive component state.",
+    "tags": ["React", "Tailwind", "Material UI"],
+    "img": "/src/assets/youtube.jpeg",
+    "repo": "https://github.com/Sehar-1207/Youtube-Clone.git",
+    "category": "Frontend"
+  }
+]
