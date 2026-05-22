@@ -101,13 +101,14 @@ export default function ProjectsPage() {
           href={project.repo}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline group/link"
+          className="inline-flex gap-1.5 text-xs font-bold text-primary hover:underline group/link"
         >
+      <FaGithub className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
           View Code 
-          <FaExternalLinkAlt className="h-2.5 w-2.5 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
         </a>
-        <FaGithub className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
       </div>
+
+      
     </div>
   ))}
 </div>

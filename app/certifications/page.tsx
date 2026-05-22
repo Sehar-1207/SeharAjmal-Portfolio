@@ -39,7 +39,7 @@ export default function CertificationsPage() {
             >
               <div 
                 onClick={() => openCertModal(cert.imageUrl)}
-                className="relative h-45 w-full bg-accent/5 flex items-center justify-center overflow-hidden cursor-zoom-in"
+                className="relative h-55 w-full bg-accent/5 flex items-center justify-center overflow-hidden cursor-zoom-in"
               >
                 <Image
                   src={cert.imageUrl} 

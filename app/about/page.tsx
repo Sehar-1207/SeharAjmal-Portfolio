@@ -5,7 +5,7 @@ import { FaReact, FaJsSquare, FaHtml5, FaCss3Alt, FaNodeJs, FaPython, FaGitAlt, 
 import { SiDotnet, SiSharp, SiExpress, SiMongodb, SiFirebase, SiPostman, SiN8N, SiFlutter, SiTailwindcss } from "react-icons/si";
 import { HiSparkles } from "react-icons/hi2";
 import { Layers, Wrench } from "lucide-react";
-import ve1 from '../../public/assets/ve1.png';
+import ve1 from '@/public/assets/ve1.png';
 
 const skillCategories = [
   {
