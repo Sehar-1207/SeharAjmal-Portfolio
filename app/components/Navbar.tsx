@@ -4,8 +4,7 @@ import { usePathname } from "next/navigation";
 import { useTheme } from "./ThemeProvider";
 import { Sun, Moon } from "lucide-react";
 import Image from "next/image";
-// 1. Make sure to import your logo image file here (adjust the path to match your project structure)
-import logo1 from "../assets/logo2.png"; 
+import logo1 from "../../public/assets/logo2.png"; 
 
 export default function Navbar() {
   const { isDark, toggleTheme } = useTheme();
