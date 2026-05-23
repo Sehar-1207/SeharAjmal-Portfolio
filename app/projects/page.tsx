@@ -1,25 +1,56 @@
 "use client";
-import React, { useState, useMemo } from "react";
-import { FaGithub, FaExternalLinkAlt, FaCode } from "react-icons/fa";
-import local from "../../public/assets/project/projects.json";
+import React, { useState, useMemo, useEffect } from "react";
+import { FaGithub } from "react-icons/fa";
+import { getProjects } from "../service/projectService";
+import { Project } from "../admin/projects/typeProject";
 import Image from "next/image";
 
 export default function ProjectsPage() {
-  const categories = useMemo(() => {
-    const allCategories = ["All", ...new Set(local.map((p) => p.category))];
-    return allCategories;
-  }, []);
-
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("All");
 
-  const filteredProjects = local.filter((project) =>
+  // Fetch from live database service layer on initialization
+  useEffect(() => {
+    async function fetchLiveProjects() {
+      try {
+        const { data, error } = await getProjects();
+        if (error) throw error;
+        setProjects(data || []);
+      } catch (err: any) {
+        console.error("Error loading portfolio projects:", err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchLiveProjects();
+  }, []);
+
+  // Compute dynamic categories based on live loaded database elements
+  const categories = useMemo(() => {
+    const allCategories = ["All", ...new Set(projects.map((p) => p.category))];
+    return allCategories;
+  }, [projects]);
+
+  const filteredProjects = projects.filter((project) =>
     activeCategory === "All" ? true : project.category === activeCategory
   );
+
+  // Clean, unobtrusive loading skeleton that retains your spacing alignment layout
+  if (loading) {
+    return (
+      <main className="grid-bg min-h-screen px-6 py-16 sm:px-12 md:px-24 flex items-center justify-center">
+        <p className="text-muted-foreground text-xs tracking-widest animate-pulse font-mono">
+          FETCHING PORTFOLIO ENTRIES...
+        </p>
+      </main>
+    );
+  }
 
   return (
     <main className="grid-bg min-h-screen px-6 py-16 sm:px-12 md:px-24">
       <div className="mx-auto max-w-7xl space-y-12">
-       
+
         <div className="text-center space-y-3">
           <h1 className="text-4xl font-black tracking-tight text-foreground sm:text-5xl">
             Selected <span className="text-primary">projects</span>
@@ -37,11 +68,10 @@ export default function ProjectsPage() {
               <button
                 key={category}
                 onClick={() => setActiveCategory(category)}
-                className={`cursor-pointer px-5 py-2 text-xs font-semibold rounded-full border transition-all duration-200 ${
-                  isActive
+                className={`cursor-pointer px-5 py-2 text-xs font-semibold rounded-full border transition-all duration-200 ${isActive
                     ? "bg-primary border-primary text-primary-foreground shadow-md shadow-primary/20 scale-105"
                     : "bg-card/40 border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
-                }`}
+                  }`}
               >
                 {category}
               </button>
@@ -49,69 +79,80 @@ export default function ProjectsPage() {
           })}
         </div>
 
-   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 pt-4">
-  {filteredProjects.map((project) => (
-    <div
-      key={project.title}
-      className="group flex flex-col justify-between rounded-3xl border border-border bg-card/30 backdrop-blur-md overflow-hidden min-h-[380px] transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/40 hover:bg-card hover:shadow-xl"
-    >
-      {/* Graphic Header Thumbnail */}
-      <div className="relative h-44 w-full bg-muted/20 border-b border-border/40 overflow-hidden">
-        <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10" />
-        
-        <Image 
-          src={project.img} 
-          alt={project.title}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-110"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-        />
-        
-        <span className="absolute top-3 right-3 z-20 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-background/80 backdrop-blur-sm border border-border text-primary">
-          {project.category}
-        </span>
-      </div>
-
-      {/* Project Details */}
-      <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-        <div className="space-y-2">
-          <h3 className="text-xl font-bold text-foreground tracking-tight group-hover:text-primary transition-colors">
-            {project.title}
-          </h3>
-          <p className="text-muted-foreground text-xs leading-relaxed line-clamp-3">
-            {project.desc}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-1.5 pt-2">
-          {project.tags.map((tag) => (
-            <span
-              key={tag}
-              className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-muted/50 border border-border/50 text-muted-foreground"
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 pt-4">
+          {filteredProjects.map((project) => (
+            <div
+              key={project.id || project.title}
+              className="group flex flex-col justify-between rounded-3xl border border-border bg-card/30 backdrop-blur-md overflow-hidden min-h-[380px] transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/40 hover:bg-card hover:shadow-xl"
             >
-              {tag}
-            </span>
+              {/* Graphic Header Thumbnail */}
+              {/* Graphic Header Thumbnail */}
+              <div className="relative h-44 w-full bg-muted/20 border-b border-border/40 overflow-hidden">
+                <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10" />
+
+                {project.img ? (
+                  <Image
+                    src={project.img}
+                    alt={project.title}
+                    fill
+                    unoptimized={true} // 👈 Forces Next.js to skip image-optimization engine constraints completely
+                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    onError={(e) => {
+                      console.error("Failed to load image from URL:", project.img);
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-muted/10 text-muted-foreground/40 text-xs">
+                    No Assets Loaded
+                  </div>
+                )}
+
+                <span className="absolute top-3 right-3 z-20 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-background/80 backdrop-blur-sm border border-border text-primary">
+                  {project.category}
+                </span>
+              </div>
+
+              {/* Project Details */}
+              <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
+                <div className="space-y-2">
+                  <h3 className="text-xl font-bold text-foreground tracking-tight group-hover:text-primary transition-colors">
+                    {project.title}
+                  </h3>
+                  <p className="text-muted-foreground text-xs leading-relaxed line-clamp-3">
+                    {project.desc}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5 pt-2">
+                  {project.tags?.map((tag) => (
+                    <span
+                      key={tag}
+                      className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-muted/50 border border-border/50 text-muted-foreground"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Footer / Links */}
+              <div className="px-6 pb-6 pt-2 border-t border-border/20 flex items-center justify-between">
+                {project.repo && (
+                  <a
+                    href={project.repo}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex gap-1.5 text-xs font-bold text-primary hover:underline group/link"
+                  >
+                    <FaGithub className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
+                    View Code
+                  </a>
+                )}
+              </div>
+            </div>
           ))}
         </div>
-      </div>
-
-      {/* Footer / Links */}
-      <div className="px-6 pb-6 pt-2 border-t border-border/20 flex items-center justify-between">
-        <a
-          href={project.repo}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex gap-1.5 text-xs font-bold text-primary hover:underline group/link"
-        >
-      <FaGithub className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
-          View Code 
-        </a>
-      </div>
-
-      
-    </div>
-  ))}
-</div>
 
         {filteredProjects.length === 0 && (
           <div className="text-center py-16 text-muted-foreground text-sm">

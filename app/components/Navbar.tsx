@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { useTheme } from "./ThemeProvider";
 import { Sun, Moon } from "lucide-react";
 import Image from "next/image";
-import logo1 from "@/public/assets/logo2.png";
+import logo1 from "../../public/assets/logo2.png";
 
 export default function Navbar() {
   const { isDark, toggleTheme } = useTheme();

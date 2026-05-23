@@ -10,8 +10,8 @@ import {
   Server,
 } from "lucide-react";
 import Image from "next/image";
-import heroImg from "@/public/assets/home/hero-3d.png";
-import avatarImg from "@/public/assets/home/avatar.png";
+import heroImg from "../public/assets/home/hero-3d.png";
+import avatarImg from "../public/assets/home/avatar.png";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ContactSchema, ContactFormData } from "./lib/schema";
