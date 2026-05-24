@@ -4,7 +4,16 @@ import React, { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '../lib/supabase'
-import { RxDashboard, RxFileText, RxLayers, RxExternalLink, RxLockOpen2, RxHamburgerMenu, RxCross2 } from 'react-icons/rx'
+import { 
+  RxDashboard, 
+  RxLayers, 
+  RxBookmark,  
+  RxFileText,   
+  RxExternalLink, 
+  RxLockOpen2, 
+  RxHamburgerMenu, 
+  RxCross2 
+} from 'react-icons/rx'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -34,7 +43,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <nav className="flex flex-col gap-2" onClick={() => setIsMobileMenuOpen(false)}>
             <NavLink href="/admin/dashboard" icon={<RxDashboard />} label="Dashboard" active={pathname === '/admin/dashboard'} />
             <NavLink href="/admin/projects" icon={<RxLayers />} label="Projects" active={pathname.startsWith('/admin/projects')} />
-            <NavLink href="/admin/certificate" icon={<RxFileText />} label="Certificates" active={pathname.startsWith('/admin/certificate')} />
+            <NavLink href="/admin/certificate" icon={<RxBookmark />} label="Certificates" active={pathname.startsWith('/admin/certificate')} />
+            <NavLink href="/admin/resume" icon={<RxFileText />} label="Resumes" active={pathname.startsWith('/admin/resume')} />
             
             <div className="my-4 border-t border-border" />
             
@@ -72,7 +82,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 function NavLink({ href, icon, label, active }: { href: string; icon: React.ReactNode; label: string; active: boolean }) {
   return (
     <Link href={href} className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition ${active ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'}`}>
-      {icon}
+      {React.cloneElement(icon as React.ReactElement, )}
       <span className="text-sm font-medium">{label}</span>
     </Link>
   )

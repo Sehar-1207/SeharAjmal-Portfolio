@@ -14,7 +14,10 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="flex flex-col min-h-screen antialiased bg-background text-foreground transition-colors duration-300">
+      <body 
+        suppressHydrationWarning 
+        className="flex flex-col min-h-screen antialiased bg-background text-foreground transition-colors duration-300"
+      >
         <ThemeProvider>
           <NavigationWrapper>
             {children}
