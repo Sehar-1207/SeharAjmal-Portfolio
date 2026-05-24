@@ -28,7 +28,8 @@ export default function Dashboard() {
   }, [])
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
+    // Added px-4 to ensure content isn't flush with mobile edges
+    <div className="max-w-5xl mx-auto space-y-8 px-4 md:px-0">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-black tracking-tight text-foreground">Dashboard</h1>
@@ -36,7 +37,9 @@ export default function Dashboard() {
           Real-time overview of your portfolio database items.
         </p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      {/* Grid: 1 col on mobile, 2 on tablet/desktop */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
         <MetricCard 
           title="Total Projects" 
           value={projectsCount} 
@@ -57,11 +60,11 @@ export default function Dashboard() {
 function MetricCard({ title, value, loading, desc }: { title: string, value: number, loading: boolean, desc: string }) {
   return (
     <div className="p-6 bg-card border border-border rounded-2xl shadow-sm hover:border-primary/20 transition-all">
-      <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground">{title}</p>
-      <p className="text-4xl font-black text-primary mt-2">
-        {loading ? <span className="animate-pulse">--</span> : value}
-      </p>
-      <div className="mt-4 text-[11px] text-muted-foreground/80">{desc}</div>
+      <p className="text-[10px] md:text-xs font-mono uppercase tracking-wider text-muted-foreground">{title}</p>
+      <div className="text-4xl font-black text-primary mt-3 mb-4">
+        {loading ? <span className="animate-pulse opacity-50">--</span> : value}
+      </div>
+      <div className="text-xs text-muted-foreground/70 border-t border-border pt-4">{desc}</div>
     </div>
   )
 }

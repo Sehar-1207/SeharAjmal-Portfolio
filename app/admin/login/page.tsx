@@ -36,12 +36,12 @@ export default function AdminLoginPage() {
   }
 
   return (
-    // h-screen ensures it fills the viewport exactly, flex centers it perfectly
-    <div className="h-screen w-full flex items-center justify-center bg-background text-foreground transition-colors duration-300">
-      <div className="w-full max-w-md bg-card border border-border shadow-2xl rounded-2xl p-8">
+    // Changed h-screen to min-h-screen and added px-4 for mobile side margins
+    <div className="min-h-screen w-full flex items-center justify-center bg-background text-foreground transition-colors duration-300 px-4">
+      <div className="w-full max-w-md bg-card border border-border shadow-2xl rounded-2xl p-6 md:p-8">
         
         {/* Header Branding */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 md:mb-8">
           <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary/10 text-primary mb-3">
             <RxLockClosed className="h-6 w-6" />
           </div>
@@ -65,7 +65,8 @@ export default function AdminLoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-background border border-border focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm transition-all"
+                // min-h-[44px] is an accessibility best practice for touch targets
+                className="w-full pl-10 pr-4 py-3 min-h-[44px] rounded-xl bg-background border border-border focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm transition-all"
                 required
               />
             </div>
@@ -79,13 +80,13 @@ export default function AdminLoginPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-10 py-3 rounded-xl bg-background border border-border focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm transition-all"
+                className="w-full pl-10 pr-10 py-3 min-h-[44px] rounded-xl bg-background border border-border focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm transition-all"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 text-muted-foreground hover:text-foreground transition-colors"
+                className="absolute right-3.5 h-full flex items-center text-muted-foreground hover:text-foreground transition-colors"
               >
                 {showPassword ? <RxEyeNone className="h-4 w-4" /> : <RxEyeOpen className="h-4 w-4" />}
               </button>
@@ -95,7 +96,7 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-primary text-primary-foreground text-sm font-bold py-3.5 rounded-xl hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
+            className="w-full bg-primary text-primary-foreground text-sm font-bold py-3.5 min-h-[44px] rounded-xl hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
           >
             {loading ? 'Authenticating...' : 'Sign In'}
           </button>

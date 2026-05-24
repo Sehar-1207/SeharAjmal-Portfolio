@@ -5,4 +5,5 @@ export type Certificate = {
   image_url: string
   date: string
   created_at?: string
+  description:string
 }

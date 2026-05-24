@@ -52,9 +52,20 @@ export async function updateProject(id: string, updates: Partial<Project>) {
     .eq('id', id)
 }
 
-export async function deleteProject(id: string) {
-  return await supabase
-    .from('projects')
-    .delete()
-    .eq('id', id)
+// service/projectService.ts
+export async function deleteProject(id: string, imgUrl: string) {
+  try {
+    // Extract file path. Adjust based on your storage path structure.
+    const urlParts = imgUrl.split('/');
+    const filePath = urlParts.slice(urlParts.indexOf('projects') + 1).join('/'); 
+
+    if (filePath) {
+      await supabase.storage.from('projects').remove([filePath]);
+    }
+
+    const { error } = await supabase.from('projects').delete().eq('id', id);
+    return { error };
+  } catch (err) {
+    return { error: err };
+  }
 }
