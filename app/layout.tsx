@@ -1,8 +1,9 @@
 import "./globals.css";
 import { ThemeProvider } from "./components/ThemeProvider";
 import NavigationWrapper from "./components/NavigationWrapper";
+import type { Metadata } from "next"; 
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Sehar Ajmal | Portfolio",
   description: "Backend Developer Portfolio Built with Next.js & Tailwind CSS",
   icons: {
@@ -11,7 +12,11 @@ export const metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body 

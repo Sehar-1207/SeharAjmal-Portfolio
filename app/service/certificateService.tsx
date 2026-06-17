@@ -1,72 +1,102 @@
-import { supabase } from '../lib/supabase'
-import { Certificate } from '../admin/certificate/typeCertificate'
+'use server'
 
-// Fetches certificates and maps database columns to your Certificate type
-export async function getCertificates(): Promise<{ data: Certificate[] | null; error: any }> {
-  const { data, error } = await supabase
-    .from('certificates')
-    .select('*')
-    .order('created_at', { ascending: false })
+import dbConnect from '@/app/lib/mongodb'
+import { Certification } from '@/app/lib/model'
+import { deleteFile } from '@/app/lib/uploadImage'
+import { revalidatePath } from 'next/cache'
+import { cookies } from 'next/headers'
 
-  if (error) return { data: null, error }
-
-  const mappedData: Certificate[] = (data || []).map((row: any) => ({
-    id: row.id,
-    title: row.title,
-    issuer: row.issuer,
-    date: row.date,
-    image_url: row.image_url,
-    description: row.description || '', // Map description
-    created_at: row.created_at
-  }))
-
-  return { data: mappedData, error: null }
-}
-
-// Adds a new certificate
-export async function addCertificate(cert: Omit<Certificate, 'id' | 'created_at'>) {
-  return await supabase
-    .from('certificates')
-    .insert([{
-      title: cert.title,
-      issuer: cert.issuer,
-      date: cert.date,
-      image_url: cert.image_url,
-      description: cert.description // Include in insert
-    }])
-}
-
-// Updates an existing certificate
-export async function updateCertificate(id: string, updates: Partial<Certificate>) {
-  const dbUpdates: any = {}
-  if (updates.title !== undefined) dbUpdates.title = updates.title
-  if (updates.issuer !== undefined) dbUpdates.issuer = updates.issuer
-  if (updates.date !== undefined) dbUpdates.date = updates.date
-  if (updates.image_url !== undefined) dbUpdates.image_url = updates.image_url
-  if (updates.description !== undefined) dbUpdates.description = updates.description // Include in update
-
-  return await supabase
-    .from('certificates')
-    .update(dbUpdates)
-    .eq('id', id)
-}
-
-export async function deleteCertificate(id: string, imageUrl: string) {
-  // Debug the incoming URL
-  console.log("Raw Image URL:", imageUrl);
-
-  // Extract just the filename
-  const fileName = imageUrl.split('/').pop();
-  console.log("Attempting to delete filename:", fileName);
-
-  if (fileName) {
-    const { data, error } = await supabase.storage
-      .from('portfolio-images')
-      .remove([fileName]); // Supabase expects an array of paths
-      
-    if (error) console.error("Supabase Storage Error:", error);
-    else console.log("Storage delete successful:", data);
+// Authorization Helper
+async function checkAuth() {
+  const cookieStore = await cookies()
+  if (!cookieStore.has('admin_session')) {
+    throw new Error('Unauthorized access.')
   }
+}
 
-  return await supabase.from('certificates').delete().eq('id', id);
+// 1. FETCH ALL CERTIFICATES
+export async function getCertificates() {
+  try {
+    await dbConnect()
+    
+    // Cast to any safely prevents the parameter 'find' type assignment errors
+    const certModel = Certification as any
+    const certificates = await certModel.find({}).sort({ createdAt: -1 }).lean().exec()
+    
+    return { success: true, data: JSON.parse(JSON.stringify(certificates)) }
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Failed to fetch certificates' }
+  }
+}
+
+// 2. ADD A NEW CERTIFICATE
+export interface AddCertificateInput {
+  title: string;
+  issuer: string;
+  issueDate?: string;
+  description?: string;
+  image: { url: string; publicId: string };
+}
+
+export async function addCertificate(data: AddCertificateInput) {
+  try {
+    await checkAuth()
+    await dbConnect()
+
+    const newCert = new Certification({
+      title: data.title,
+      issuer: data.issuer,
+      issueDate: data.issueDate || "",
+      description: data.description || "",
+      image: {
+        url: data.image.url,
+        publicId: data.image.publicId,
+      }
+    })
+
+    await newCert.save()
+    revalidatePath('/') 
+    return { success: true }
+  } catch (error: any) {
+    return { success: false, error: error.message }
+  }
+}
+
+// 3. UPDATE AN EXISTING CERTIFICATE
+export async function updateCertificate(id: string, data: Partial<AddCertificateInput>) {
+  try {
+    await checkAuth()
+    await dbConnect()
+
+    // FIX: Using an explicit cast bypasses the "This expression is not callable" union block error
+    const certModel = Certification as any
+    await certModel.findByIdAndUpdate(
+      id, 
+      { $set: data },
+      { new: true }
+    ).exec()
+    
+    revalidatePath('/')
+    return { success: true }
+  } catch (error: any) {
+    return { success: false, error: error.message }
+  }
+}
+
+// 4. DELETE A CERTIFICATE
+export async function deleteCertificate(id: string, publicId: string) {
+  try {
+    await checkAuth()
+    await dbConnect()
+
+    await deleteFile(publicId, 'image')
+
+    const certModel = Certification as any
+    await certModel.findByIdAndDelete(id).exec()
+
+    revalidatePath('/')
+    return { success: true }
+  } catch (error: any) {
+    return { success: false, error: error.message }
+  }
 }

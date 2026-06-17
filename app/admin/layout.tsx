@@ -3,12 +3,11 @@
 import React, { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '../lib/supabase'
 import { 
   RxDashboard, 
   RxLayers, 
-  RxBookmark,  
-  RxFileText,   
+  RxBookmark,   
+  RxFileText,    
   RxExternalLink, 
   RxLockOpen2, 
   RxHamburgerMenu, 
@@ -21,9 +20,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const isLoginPage = pathname === '/admin/login'
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/admin/login')
+  // Handles cookie purge completely inline via browser document manipulation
+  const handleLogout = () => {
+    try {
+      // Wipes out the admin session tracking token client side instantly
+      document.cookie = "admin_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict;"
+      
+      // Forces immediate router sync back to login page
+      router.refresh()
+      router.push('/admin/login')
+    } catch (err) {
+      console.error("Logout execution exception:", err)
+    }
   }
 
   if (isLoginPage) return <main className="flex min-h-screen items-center justify-center">{children}</main>
@@ -82,7 +90,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 function NavLink({ href, icon, label, active }: { href: string; icon: React.ReactNode; label: string; active: boolean }) {
   return (
     <Link href={href} className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition ${active ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'}`}>
-      {React.cloneElement(icon as React.ReactElement, )}
+      {React.cloneElement(icon as React.ReactElement)}
       <span className="text-sm font-medium">{label}</span>
     </Link>
   )

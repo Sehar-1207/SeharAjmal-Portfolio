@@ -1,8 +1,8 @@
 "use client";
 import React, { useState, useMemo, useEffect } from "react";
 import { FaGithub } from "react-icons/fa";
-import { getProjects } from "../service/projectService";
-import { Project } from "../admin/projects/typeProject";
+import { getProjects } from "@/app/service/projectService";
+import { Project } from "@/app/admin/projects/typeProject";
 import Image from "next/image";
 
 export default function ProjectsPage() {
@@ -14,11 +14,27 @@ export default function ProjectsPage() {
   useEffect(() => {
     async function fetchLiveProjects() {
       try {
-        const { data, error } = await getProjects();
-        if (error) throw error;
-        setProjects(data || []);
+        setLoading(true);
+        // FIX: Destructure according to unified `{ success, data, error }` server layout
+        const result = await getProjects();
+        
+        if (result?.success && Array.isArray(result.data)) {
+          // Map MongoDB variant structures securely if needed (e.g. tracking MongoDB _id property fallbacks)
+          const mappedProjects: Project[] = result.data.map((p: any) => ({
+            id: p._id || p.id,
+            title: p.title || "",
+            desc: p.desc || "",
+            img: p.img || "",
+            category: p.category || "Uncategorized", // Safe default assignment
+            tags: Array.isArray(p.tags) ? p.tags : [],
+            repo: p.repo || ""
+          }));
+          setProjects(mappedProjects);
+        } else {
+          console.error("Backend failed to load items safely:", result?.error);
+        }
       } catch (err: any) {
-        console.error("Error loading portfolio projects:", err.message);
+        console.error("Error loading portfolio projects:", err.message || err);
       } finally {
         setLoading(false);
       }
@@ -27,13 +43,16 @@ export default function ProjectsPage() {
   }, []);
 
   // Compute dynamic categories based on live loaded database elements
+  // FIX: Protect runtime iteration from crash if a project document property lacks an explicit category value
   const categories = useMemo(() => {
-    const allCategories = ["All", ...new Set(projects.map((p) => p.category))];
-    return allCategories;
+    const uniqueCategories = new Set(
+      projects.map((p) => p.category || "Uncategorized")
+    );
+    return ["All", ...Array.from(uniqueCategories)];
   }, [projects]);
 
   const filteredProjects = projects.filter((project) =>
-    activeCategory === "All" ? true : project.category === activeCategory
+    activeCategory === "All" ? true : (project.category || "Uncategorized") === activeCategory
   );
 
   // Clean, unobtrusive loading skeleton that retains your spacing alignment layout
@@ -86,7 +105,6 @@ export default function ProjectsPage() {
               className="group flex flex-col justify-between rounded-3xl border border-border bg-card/30 backdrop-blur-md overflow-hidden min-h-[380px] transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/40 hover:bg-card hover:shadow-xl"
             >
               {/* Graphic Header Thumbnail */}
-              {/* Graphic Header Thumbnail */}
               <div className="relative h-44 w-full bg-muted/20 border-b border-border/40 overflow-hidden">
                 <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10" />
 
@@ -95,10 +113,10 @@ export default function ProjectsPage() {
                     src={project.img}
                     alt={project.title}
                     fill
-                    unoptimized={true} // 👈 Forces Next.js to skip image-optimization engine constraints completely
+                    unoptimized={true} // Forces Next.js to skip image-optimization engine constraints completely
                     className="object-cover transition-transform duration-500 group-hover:scale-110"
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    onError={(e) => {
+                    onError={() => {
                       console.error("Failed to load image from URL:", project.img);
                     }}
                   />

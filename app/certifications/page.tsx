@@ -3,26 +3,47 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { HiZoomIn } from "react-icons/hi";
-import { getCertificates } from "../service/certificateService"; // Import your service
-import { Certificate } from "../admin/certificate/typeCertificate"; // Import your type
+import { getCertificates } from "../service/certificateService"; 
+import { Certificate } from "../admin/certificate/typeCertificate"; 
 
 export default function CertificationsPage() {
   const [certs, setCerts] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCert, setSelectedCert] = useState<string | null>(null);
 
-  // Fetch data on load
   useEffect(() => {
     async function fetchData() {
-      const { data, error } = await getCertificates();
-      if (error) console.error("Error fetching certs:", error);
-      else setCerts(data || []);
-      setLoading(false);
+      try {
+        setLoading(true);
+        const result = await getCertificates();
+        
+        if (result?.success && Array.isArray(result.data)) {
+          const mappedCerts: Certificate[] = result.data.map((c: any) => ({
+            id: c._id || c.id,
+            title: c.title || "Untitled Certificate",
+            issuer: c.issuer || "Unknown Issuer",
+            description: c.description || "",
+            image: {
+              url: c.image?.url || c.image_url || c.imageUrl || "",
+              publicId: c.image?.publicId || c.public_id || c.publicId || ""
+            },
+            date: c.date || ""
+          }));
+          setCerts(mappedCerts);
+        } else {
+          console.error("Error fetching certs:", result?.error);
+        }
+      } catch (err) {
+        console.error("Unexpected failure loading certificates:", err);
+      } finally {
+        setLoading(false);
+      }
     }
     fetchData();
   }, []);
 
   const openCertModal = (certUrl: string) => {
+    if (!certUrl) return;
     setSelectedCert(certUrl);
     if (typeof window !== 'undefined') document.body.style.overflow = "hidden";
   };
@@ -49,7 +70,7 @@ export default function CertificationsPage() {
         {loading ? (
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 pt-6">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-[420px] rounded-3xl bg-muted animate-pulse border border-border" />
+              <div key={i} className="h-[420px] rounded-3xl bg-muted/30 animate-pulse border border-border" />
             ))}
           </div>
         ) : (
@@ -57,19 +78,25 @@ export default function CertificationsPage() {
             {certs.map((cert) => (
               <div
                 key={cert.id}
-                className="group flex flex-col rounded-3xl border border-border bg-card backdrop-blur-md overflow-hidden min-h-[420px] transition-all duration-300 hover:-translate-y-2 hover:border-primary/40 hover:shadow-2xl"
+                className="group flex flex-col rounded-3xl border border-border bg-card/40 backdrop-blur-md overflow-hidden min-h-[420px] transition-all duration-300 hover:-translate-y-2 hover:border-primary/40 hover:shadow-2xl"
               >
+                {/* FIX: Read from cert.image.url for the handlers and elements below */}
                 <div 
-                  onClick={() => openCertModal(cert.image_url)}
+                  onClick={() => openCertModal(cert.image.url)} 
                   className="relative h-56 w-full bg-accent/5 flex items-center justify-center overflow-hidden cursor-zoom-in"
                 >
-                  <Image
-                    src={cert.image_url} 
-                    alt={cert.title}
-                    fill
-                    sizes="(max-width: 1280px) 100vw, 33vw"
-                    className="object-cover transform transition-transform duration-500 group-hover:scale-105"
-                  />
+                  {cert.image?.url ? ( 
+                    <Image
+                      src={cert.image.url} 
+                      alt={cert.title}
+                      fill
+                      unoptimized={true} 
+                      sizes="(max-width: 1280px) 100vw, 33vw"
+                      className="object-cover transform transition-transform duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="text-muted-foreground/40 text-xs">No Asset Rendered</div>
+                  )}
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                     <HiZoomIn className="h-10 w-10 text-white" />
                   </div>
@@ -96,14 +123,27 @@ export default function CertificationsPage() {
             ))}
           </div>
         )}
+
+        {!loading && certs.length === 0 && (
+          <div className="text-center py-16 text-muted-foreground text-sm">
+            No certification documents uploaded to the database yet.
+          </div>
+        )}
       </div>
 
-      {/* Modal remains the same */}
+      {/* Modal Container */}
       {selectedCert && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-6" onClick={closeCertModal}>
-          <button className="absolute top-6 right-6 text-white text-3xl hover:text-primary">&times;</button>
+          <button className="absolute top-6 right-6 text-white text-3xl hover:text-primary transition-colors" onClick={closeCertModal}>&times;</button>
           <div className="relative w-full h-full max-w-4xl max-h-[80vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-            <Image src={selectedCert} alt="Certificate" fill className="object-contain" priority />
+            <Image 
+              src={selectedCert} 
+              alt="Certificate Full View" 
+              fill 
+              unoptimized={true}
+              className="object-contain" 
+              priority 
+            />
           </div>
         </div>
       )}

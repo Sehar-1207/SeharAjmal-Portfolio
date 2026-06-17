@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { FileText, Download, Eye, Loader2 } from "lucide-react";
-import { supabase } from "../lib/supabase";
+import { getResumes } from "@/app/service/resumeService";
 
 export default function ResumePage() {
   const [resumeUrl, setResumeUrl] = useState<string | null>(null);
@@ -12,19 +12,17 @@ export default function ResumePage() {
     const fetchLatestResume = async () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from("resumes")
-          .select("file_url")
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .single();
+        
+        // Execute the server action to get resumes from MongoDB Atlas
+        const result = await getResumes();
 
-        if (error) {
-          if (error.code !== "PGRST116") { 
-            console.error("Error fetching latest resume:", error.message);
-          }
-        } else if (data) {
-          setResumeUrl(data.file_url);
+        // FIX: Safely parse MongoDB action wrapper structure
+        if (result?.success && Array.isArray(result.data) && result.data.length > 0) {
+          const latestResume = result.data[0];
+          
+          // FIX: Add fallbacks to match your schema mappings securely (fileUrl vs file_url)
+          const targetUrl = latestResume.fileUrl || latestResume.file_url || null;
+          setResumeUrl(targetUrl);
         }
       } catch (err) {
         console.error("Unexpected error fetching resume asset:", err);

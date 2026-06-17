@@ -1,28 +1,30 @@
 "use client";
 
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
 import {
   ExternalLink,
   FileText,
   Code2,
   Layout,
   Server,
+  CheckCircle,
 } from "lucide-react";
 import Image from "next/image";
-import heroImg from "../public/assets/home/hero-3d.png";
-import avatarImg from "../public/assets/home/avatar.png";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ContactSchema, ContactFormData } from "./lib/schema";
 import { sendEmail } from "./actions/sendmail";
+
+import heroImg from "../public/assets/home/hero-3d.png";
+import avatarImg from "../public/assets/home/avatar.png";
 
 const ROLES = [
   "Flutter App Developer",
   "Backend Developer",
   "ASP.NET Core Developer",
   "Frontend Developer",
-  "Mern Stack Developer",
+  "MERN Stack Developer",
 ];
 
 function useTyping() {
@@ -58,7 +60,7 @@ function Hero() {
   const typed = useTyping();
   return (
     <section className="relative min-h-[88vh] flex items-center pt-18 pb-16">
-      <div className="mx-auto max-w-6xl px-6 grid md:grid-cols-2 gap-12 items-center">
+      <div className="mx-auto max-w-6xl px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center w-full">
         <div>
           <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
             <span className="size-1.5 rounded-full bg-primary animate-pulse" />
@@ -138,7 +140,7 @@ function AvatarBlock() {
 
   return (
     <section className="relative py-20">
-      <div className="mx-auto max-w-6xl px-6 grid md:grid-cols-2 gap-12 items-center">
+      <div className="mx-auto max-w-6xl px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
         <div
           ref={ref}
           className="relative mx-auto"
@@ -206,12 +208,12 @@ function AvatarBlock() {
                 key={title}
                 className="group flex items-start gap-4 rounded-2xl border border-border/60 bg-card/60 backdrop-blur p-4 transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_10px_30px_-12px] hover:shadow-cyan-500/40"
               >
-                <div className="grid place-items-center size-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-teal-500/20 text-primary group-hover:from-cyan-500 group-hover:to-teal-500 group-hover:text-white transition-colors">
+                <div className="grid place-items-center size-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-teal-500/20 text-primary group-hover:from-cyan-500 group-hover:to-teal-500 group-hover:text-white transition-colors shrink-0">
                   <Icon className="size-5" />
                 </div>
                 <div>
-                  <h3 className="font-semibold">{title}</h3>
-                  <p className="text-sm text-muted-foreground">{desc}</p>
+                  <h3 className="font-semibold text-foreground">{title}</h3>
+                  <p className="text-sm text-muted-foreground mt-0.5">{desc}</p>
                 </div>
               </div>
             ))}
@@ -221,35 +223,51 @@ function AvatarBlock() {
     </section>
   );
 }
-function ContactForm() {
+
+interface ContactFormProps {
+  showToast: () => void;
+}
+
+function ContactForm({ showToast }: ContactFormProps) {
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<ContactFormData>({
     resolver: zodResolver(ContactSchema),
   });
 
   const onSubmit = async (data: ContactFormData) => {
-    const result = await sendEmail(data);
-    if (result.success) {
-      alert("Message sent!");
-      reset();
-    } else {
-      alert("Something went wrong.");
+    try {
+      const result = await sendEmail(data);
+      if (result.success) {
+        showToast();
+        reset();
+      } else {
+        alert("Something went wrong processing your request.");
+      }
+    } catch (err) {
+      console.error("Email submission error:", err);
+      alert("Failed to send message. Please try again later.");
     }
   };
 
   return (
-    <section className="py-20 px-6 max-w-xl mx-auto">
-      <h2 className="text-3xl font-bold mb-6 text-center">Get In Touch</h2>
+    <section className="py-20 px-6 max-w-xl mx-auto w-full">
+      <h2 className="text-3xl font-bold mb-6 text-center text-foreground">Get In Touch</h2>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <input {...register("name")} placeholder="Name" className="w-full p-3 rounded-xl border border-border bg-card/60" />
-        {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
+        <div>
+          <input {...register("name")} placeholder="Name" className="w-full p-3 rounded-xl border border-border bg-card/60 outline-none focus:border-primary transition text-foreground placeholder:text-muted-foreground" />
+          {errors.name && <p className="text-destructive text-xs mt-1 px-1">{errors.name.message}</p>}
+        </div>
         
-        <input {...register("email")} placeholder="Email" className="w-full p-3 rounded-xl border border-border bg-card/60" />
-        {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
+        <div>
+          <input {...register("email")} placeholder="Email" className="w-full p-3 rounded-xl border border-border bg-card/60 outline-none focus:border-primary transition text-foreground placeholder:text-muted-foreground" />
+          {errors.email && <p className="text-destructive text-xs mt-1 px-1">{errors.email.message}</p>}
+        </div>
         
-        <textarea {...register("message")} placeholder="Message" className="w-full p-3 rounded-xl border border-border bg-card/60 h-32" />
-        {errors.message && <p className="text-red-500 text-sm">{errors.message.message}</p>}
+        <div>
+          <textarea {...register("message")} placeholder="Message" className="w-full p-3 rounded-xl border border-border bg-card/60 h-32 outline-none focus:border-primary transition resize-none text-foreground placeholder:text-muted-foreground" />
+          {errors.message && <p className="text-destructive text-xs mt-1 px-1">{errors.message.message}</p>}
+        </div>
         
-        <button disabled={isSubmitting} className="w-full bg-gradient-to-r from-cyan-500 to-teal-500 text-white py-3 rounded-xl font-semibold hover:opacity-90">
+        <button type="submit" disabled={isSubmitting} className="w-full bg-gradient-to-r from-cyan-500 to-teal-500 text-white py-3 rounded-xl font-semibold hover:opacity-90 transition disabled:opacity-50 min-h-[44px]">
           {isSubmitting ? "Sending..." : "Send Message"}
         </button>
       </form>
@@ -257,12 +275,68 @@ function ContactForm() {
   );
 }
 
-export default function HomePage() {
+function Toast({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  useEffect(() => {
+    if (!visible) return;
+    const timer = setTimeout(() => {
+      onClose();
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [visible, onClose]);
+
+  if (!visible) return null;
+
   return (
-    <>
+    <div className="fixed bottom-5 right-5 z-50 w-[350px] min-w-[300px] max-w-[calc(100vw-40px)] bg-card/90 backdrop-blur border border-emerald-500/30 text-card-foreground shadow-2xl rounded-xl overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
+      <div className="p-4 flex items-center gap-3">
+        <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 shrink-0">
+          <CheckCircle className="size-5" />
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-foreground truncate">Success</p>
+          <p className="text-xs text-muted-foreground mt-0.5 truncate">Your message has been sent successfully!</p>
+        </div>
+        
+        <button 
+          type="button"
+          onClick={onClose} 
+          className="text-muted-foreground hover:text-foreground text-xs font-semibold px-2 py-1 rounded hover:bg-muted transition-colors shrink-0"
+        >
+          Dismiss
+        </button>
+      </div>
+      
+      {/* 5-Second Linear Countdown Progress Bar */}
+      <div className="h-1 w-full bg-emerald-500/10">
+        <div 
+          className="h-full bg-emerald-500 transition-all origin-left"
+          style={{
+            animation: 'toast-countdown 5s linear forwards'
+          }}
+        />
+      </div>
+
+      <style jsx global>{`
+        @keyframes toast-countdown {
+          from { transform: scaleX(1); }
+          to { transform: scaleX(0); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+export default function HomePage() {
+  const [toastVisible, setToastVisible] = useState(false);
+
+  return (
+    <main className="min-h-screen grid-bg overflow-x-hidden">
       <Hero />
       <AvatarBlock />
-      <ContactForm />
-    </>
+      <ContactForm showToast={() => setToastVisible(true)} />
+      
+      <Toast visible={toastVisible} onClose={() => setToastVisible(false)} />
+    </main>
   );
 }

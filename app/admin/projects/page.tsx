@@ -1,9 +1,8 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { supabase } from '../../lib/supabase'
-import { getProjects, addProject, updateProject, deleteProject } from '../../service/projectService'
-import { uploadImage } from '../../lib/uploadImage'
+import { getProjects, addProject, updateProject, deleteProject } from '@/app/service/projectService'
+import { uploadFile } from '@/app/lib/uploadImage'
 import { Project } from './typeProject'
 import { 
   RxPencil1, 
@@ -35,22 +34,27 @@ export default function ProjectsPage() {
 
   const fetchProjects = async () => {
     setLoading(true)
-    const { data, error } = await getProjects()
-    if (error) console.error('Error fetching projects:', error.message)
-    else setProjects(data || [])
+    const res = await getProjects()
+    if (res.success && Array.isArray(res.data)) {
+      const mappedProjects: Project[] = res.data.map((p: any) => ({
+        id: p._id || p.id,
+        title: p.title,
+        desc: p.description || p.desc || '',
+        tags: p.tags || [],
+        img: p.image?.url || p.img || '',
+        repo: p.githubLink || p.repo || '',
+        category: p.category || ''
+      }))
+      setProjects(mappedProjects)
+    } else {
+      console.error('Error fetching projects:', res.error)
+    }
     setLoading(false)
   }
 
+  // 2. Clear out original Supabase subscription channel pipelines
   useEffect(() => {
     fetchProjects()
-    const channel = supabase
-      .channel('projects-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => {
-        fetchProjects()
-      })
-      .subscribe()
-
-    return () => { supabase.removeChannel(channel) }
   }, [])
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,8 +62,19 @@ export default function ProjectsPage() {
     if (!file) return
     try {
       setImageUploading(true)
-      const uploadedUrl = await uploadImage(file)
-      setImg(uploadedUrl) 
+      
+      // 3. Wrap file into FormData container for Cloudinary streams
+      const uploadData = new FormData()
+      uploadData.append('file', file)
+      
+      const uploadResult = await uploadFile(uploadData)
+      
+      // FIX: Maps cleanly to direct .url string output matching certificate logic
+      if (typeof uploadResult === 'string') {
+        setImg(uploadResult)
+      } else {
+        setImg(uploadResult.url)
+      }
     } catch (error: any) {
       alert(`Image upload failed: ${error.message || error}`)
     } finally {
@@ -75,19 +90,29 @@ export default function ProjectsPage() {
     }
     setFormSubmitting(true)
     const tagsArray = tagsInput.split(',').map((tag) => tag.trim()).filter((tag) => tag !== '')
-    const projectData = { title, desc, tags: tagsArray, img, repo, category }
-
-    let error;
-    if (editingId) {
-      const res = await updateProject(editingId, projectData)
-      error = res.error
-    } else {
-      const res = await addProject(projectData)
-      error = res.error
+    
+    // Format dataset keys cleanly for our project payload structure
+    const projectPayload = { 
+      title, 
+      description: desc, 
+      tags: tagsArray, 
+      image: {
+        url: img,
+        publicId: '' // Extracted by service or handled transparently
+      }, 
+      githubLink: repo, 
+      category: category as any
     }
+
+    // 4. Update the routing execution structure to parse MongoDB outputs safely
+    const result = editingId 
+      ? await updateProject(editingId, projectPayload) 
+      : await addProject(projectPayload)
+      
     setFormSubmitting(false)
-    if (error) {
-      alert(`Error saving project data: ${error.message}`)
+    
+    if (!result.success) {
+      alert(`Error saving project data: ${result.error}`)
     } else {
       clearForm()
       fetchProjects()
@@ -96,9 +121,12 @@ export default function ProjectsPage() {
 
   const confirmDelete = async () => {
     if (!deleteTarget) return
-    const { error } = await deleteProject(deleteTarget.id!, deleteTarget.img)
-    if (error) alert(`Error deleting project: ${error.message}`)
-    else fetchProjects()
+    const result = await deleteProject(deleteTarget.id!, deleteTarget.img)
+    if (!result.success) {
+      alert(`Error deleting project: ${result.error}`)
+    } else {
+      fetchProjects()
+    }
     setDeleteTarget(null)
   }
 
@@ -181,29 +209,36 @@ export default function ProjectsPage() {
         </div>
       </form>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {projects.map((p) => (
-          <div key={p.id} className="bg-card border border-border rounded-2xl flex flex-col overflow-hidden shadow-sm hover:border-primary/20 transition-all">
-            <div className="relative h-48 w-full bg-muted overflow-hidden">
-              {p.img ? <img src={p.img} alt={p.title} className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full"><RxLinkBreak2 className="text-muted-foreground/40" /></div>}
-              <span className="absolute top-3 right-3 text-[10px] font-bold uppercase px-2.5 py-1 rounded-md bg-background/90 text-primary border border-border">{p.category}</span>
-            </div>
-            <div className="p-5 flex-1 space-y-2">
-              <h3 className="font-bold text-lg leading-tight line-clamp-1">{p.title}</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">{p.desc}</p>
-              <div className="flex flex-wrap gap-1.5 pt-2">
-                {p.tags?.map((tag, i) => <span key={i} className="text-[10px] bg-muted px-2 py-0.5 rounded-md text-muted-foreground">{tag}</span>)}
+      {/* Grid Render Window */}
+      {loading ? (
+        <div className="text-center py-12 text-sm text-muted-foreground animate-pulse">Loading project gallery items...</div>
+      ) : projects.length === 0 ? (
+        <div className="text-center py-12 border border-dashed rounded-2xl text-sm text-muted-foreground">No showcase entries recorded in database yet.</div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {projects.map((p) => (
+            <div key={p.id} className="bg-card border border-border rounded-2xl flex flex-col overflow-hidden shadow-sm hover:border-primary/20 transition-all">
+              <div className="relative h-48 w-full bg-muted overflow-hidden">
+                {p.img ? <img src={p.img} alt={p.title} className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full"><RxLinkBreak2 className="text-muted-foreground/40" /></div>}
+                <span className="absolute top-3 right-3 text-[10px] font-bold uppercase px-2.5 py-1 rounded-md bg-background/90 text-primary border border-border">{p.category}</span>
+              </div>
+              <div className="p-5 flex-1 space-y-2">
+                <h3 className="font-bold text-lg leading-tight line-clamp-1">{p.title}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">{p.desc}</p>
+                <div className="flex flex-wrap gap-1.5 pt-2">
+                  {p.tags?.map((tag, i) => <span key={i} className="text-[10px] bg-muted px-2 py-0.5 rounded-md text-muted-foreground">{tag}</span>)}
+                </div>
+              </div>
+              <div className="p-5 pt-0 mt-2">
+                <div className="flex gap-2.5 pt-3 border-t border-border/40">
+                  <button onClick={() => handleEditClick(p)} className="flex-1 flex items-center justify-center gap-1.5 bg-muted hover:bg-muted/80 py-2.5 rounded-xl text-xs font-bold transition"><RxPencil1 className="text-amber-500" /> Edit</button>
+                  <button onClick={() => setDeleteTarget(p)} className="flex-1 flex items-center justify-center gap-1.5 bg-destructive/10 hover:bg-destructive hover:text-destructive-foreground text-destructive py-2.5 rounded-xl text-xs font-bold transition"><RxTrash /> Delete</button>
+                </div>
               </div>
             </div>
-            <div className="p-5 pt-0 mt-2">
-              <div className="flex gap-2.5 pt-3 border-t border-border/40">
-                <button onClick={() => handleEditClick(p)} className="flex-1 flex items-center justify-center gap-1.5 bg-muted hover:bg-muted/80 py-2.5 rounded-xl text-xs font-bold transition"><RxPencil1 className="text-amber-500" /> Edit</button>
-                <button onClick={() => setDeleteTarget(p)} className="flex-1 flex items-center justify-center gap-1.5 bg-destructive/10 hover:bg-destructive hover:text-destructive-foreground text-destructive py-2.5 rounded-xl text-xs font-bold transition"><RxTrash /> Delete</button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

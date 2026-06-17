@@ -2,8 +2,11 @@ export type Certificate = {
   id: string
   title: string
   issuer: string
-  image_url: string
   date: string
+  description: string
+  image: {
+    url: string
+    publicId: string
+  }
   created_at?: string
-  description:string
 }

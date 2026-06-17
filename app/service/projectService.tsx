@@ -1,71 +1,121 @@
-import { supabase } from '../lib/supabase'
-import { Project } from '../admin/projects/typeProject'
+'use server'
 
-// Fetches database entries and converts them into your preferred object structure
-export async function getProjects(): Promise<{ data: Project[] | null; error: any }> {
-  const { data, error } = await supabase
-    .from('projects')
-    .select('*')
-    .order('created_at', { ascending: false })
+import dbConnect from '../lib/mongodb'
+import { Project } from '../lib/model'
+import { deleteFile } from '../lib/uploadImage'
+import { revalidatePath } from 'next/cache'
+import { cookies } from 'next/headers'
 
-  if (error) return { data: null, error }
-
-  const mappedData: Project[] = (data || []).map((row: any) => ({
-    id: row.id,
-    title: row.title,
-    desc: row.description || '',
-    tags: Array.isArray(row.tags) ? row.tags : [],
-    img: row.image_url || '',
-    repo: row.github_url || '',
-    category: row.category || 'Frontend',
-    created_at: row.created_at
-  }))
-
-  return { data: mappedData, error: null }
+// Authorization Helper
+async function checkAuth() {
+  const cookieStore = await cookies()
+  if (!cookieStore.has('admin_session')) {
+    throw new Error('Unauthorized access.')
+  }
 }
 
-export async function addProject(project: Omit<Project, 'id' | 'created_at'>) {
-  return await supabase
-    .from('projects')
-    .insert([{
-      title: project.title,
-      description: project.desc, // Maps your 'desc' to Supabase 'description'
-      tags: project.tags,
-      image_url: project.img,    // Maps your 'img' to Supabase 'image_url'
-      github_url: project.repo,  // Maps your 'repo' to Supabase 'github_url'
-      category: project.category
-    }])
-}
-
-export async function updateProject(id: string, updates: Partial<Project>) {
-  const dbUpdates: any = {}
-  if (updates.title !== undefined) dbUpdates.title = updates.title
-  if (updates.desc !== undefined) dbUpdates.description = updates.desc
-  if (updates.tags !== undefined) dbUpdates.tags = updates.tags
-  if (updates.img !== undefined) dbUpdates.image_url = updates.img
-  if (updates.repo !== undefined) dbUpdates.github_url = updates.repo
-  if (updates.category !== undefined) dbUpdates.category = updates.category
-
-  return await supabase
-    .from('projects')
-    .update(dbUpdates)
-    .eq('id', id)
-}
-
-// service/projectService.ts
-export async function deleteProject(id: string, imgUrl: string) {
+// 1. FETCH ALL PROJECTS (Sorted by drag-and-drop order)
+export async function getProjects() {
   try {
-    // Extract file path. Adjust based on your storage path structure.
-    const urlParts = imgUrl.split('/');
-    const filePath = urlParts.slice(urlParts.indexOf('projects') + 1).join('/'); 
+    await dbConnect()
+    
+    // Cast to any to bypass Mongoose generic query parameter typing bugs
+    const projectModel = Project as any
+    const projects = await projectModel.find({}).sort({ order: 1 }).lean()
+    
+    return { success: true, data: JSON.parse(JSON.stringify(projects)) }
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Failed to fetch projects' }
+  }
+}
 
-    if (filePath) {
-      await supabase.storage.from('projects').remove([filePath]);
-    }
+// 2. ADD NEW PROJECT
+export interface AddProjectInput {
+  title: string;
+  description: string;
+  category: "frontend" | "backend" | "automation" | "app-development";
+  image: { url: string; publicId: string };
+  projectLink?: string;
+  githubLink?: string;
+  tags: string[];
+}
 
-    const { error } = await supabase.from('projects').delete().eq('id', id);
-    return { error };
-  } catch (err) {
-    return { error: err };
+export async function addProject(data: AddProjectInput) {
+  try {
+    await checkAuth()
+    await dbConnect()
+    
+    // Cast to any to allow clean chaining of .sort() and .lean() without error
+    const projectModel = Project as any
+    const highestOrderProject = await projectModel.findOne({}).sort({ order: -1 }).lean()
+    const nextOrder = highestOrderProject ? highestOrderProject.order + 1 : 0
+
+    const newProject = new Project({
+      ...data,
+      order: nextOrder
+    })
+
+    await newProject.save()
+    revalidatePath('/') 
+    return { success: true }
+  } catch (error: any) {
+    return { success: false, error: error.message }
+  }
+}
+
+// 3. UPDATE AN EXISTING PROJECT
+export async function updateProject(id: string, data: Partial<AddProjectInput>) {
+  try {
+    await checkAuth()
+    await dbConnect()
+
+    // Cast to any to fix the "This expression is not callable" union type error
+    const projectModel = Project as any
+    await projectModel.findByIdAndUpdate(id, { $set: data })
+    
+    revalidatePath('/')
+    return { success: true }
+  } catch (error: any) {
+    return { success: false, error: error.message }
+  }
+}
+
+// 4. DRAG AND DROP REORDERING ACTIONS
+export async function reorderProjects(orderedIds: string[]) {
+  try {
+    await checkAuth()
+    await dbConnect()
+    
+    const projectModel = Project as any
+    const bulkOps = orderedIds.map((id, index) => ({
+      updateOne: {
+        filter: { _id: id },
+        update: { $set: { order: index } },
+      },
+    }))
+
+    await projectModel.bulkWrite(bulkOps)
+    revalidatePath('/')
+    return { success: true }
+  } catch (error: any) {
+    return { success: false, error: error.message }
+  }
+}
+
+// 5. DELETE A PROJECT
+export async function deleteProject(id: string, publicId: string) {
+  try {
+    await checkAuth()
+    await dbConnect()
+    
+    await deleteFile(publicId, 'image')
+    
+    const projectModel = Project as any
+    await projectModel.findByIdAndDelete(id)
+    
+    revalidatePath('/')
+    return { success: true }
+  } catch (error: any) {
+    return { success: false, error: error.message }
   }
 }
