@@ -1,8 +1,8 @@
 'use server'
 
 import dbConnect from '@/app/lib/mongodb'
-import { Certification } from '@/app/lib/model'
-import { deleteFile } from '@/app/lib/uploadImage'
+import { Certification } from '@/app/models/certificates'
+import { deleteFile } from '@/app/lib/cloudinary'
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 
@@ -14,14 +14,12 @@ async function checkAuth() {
   }
 }
 
-// 1. FETCH ALL CERTIFICATES
 export async function getCertificates() {
   try {
     await dbConnect()
     
-    // Cast to any safely prevents the parameter 'find' type assignment errors
     const certModel = Certification as any
-    const certificates = await certModel.find({}).sort({ createdAt: -1 }).lean().exec()
+    const certificates = await certModel.find({}).sort({ order: 1, createdAt: -1 }).lean().exec()
     
     return { success: true, data: JSON.parse(JSON.stringify(certificates)) }
   } catch (error: any) {
@@ -43,6 +41,9 @@ export async function addCertificate(data: AddCertificateInput) {
     await checkAuth()
     await dbConnect()
 
+    const certModel = Certification as any
+    const count = await certModel.countDocuments()
+
     const newCert = new Certification({
       title: data.title,
       issuer: data.issuer,
@@ -51,7 +52,8 @@ export async function addCertificate(data: AddCertificateInput) {
       image: {
         url: data.image.url,
         publicId: data.image.publicId,
-      }
+      },
+      order: count 
     })
 
     await newCert.save()
@@ -68,7 +70,6 @@ export async function updateCertificate(id: string, data: Partial<AddCertificate
     await checkAuth()
     await dbConnect()
 
-    // FIX: Using an explicit cast bypasses the "This expression is not callable" union block error
     const certModel = Certification as any
     await certModel.findByIdAndUpdate(
       id, 
@@ -89,7 +90,9 @@ export async function deleteCertificate(id: string, publicId: string) {
     await checkAuth()
     await dbConnect()
 
-    await deleteFile(publicId, 'image')
+    if (publicId) {
+      await deleteFile(publicId, 'image')
+    }
 
     const certModel = Certification as any
     await certModel.findByIdAndDelete(id).exec()
@@ -100,3 +103,4 @@ export async function deleteCertificate(id: string, publicId: string) {
     return { success: false, error: error.message }
   }
 }
+

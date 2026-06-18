@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { HiZoomIn } from "react-icons/hi";
+import { FaExternalLinkAlt } from "react-icons/fa"; // Imported link icon for your credentialLink
 import { getCertificates } from "../service/certificateService"; 
 import { Certificate } from "../admin/certificate/typeCertificate"; 
 
@@ -22,12 +23,13 @@ export default function CertificationsPage() {
             id: c._id || c.id,
             title: c.title || "Untitled Certificate",
             issuer: c.issuer || "Unknown Issuer",
-            description: c.description || "",
-            image: {
-              url: c.image?.url || c.image_url || c.imageUrl || "",
-              publicId: c.image?.publicId || c.public_id || c.publicId || ""
-            },
-            date: c.date || ""
+            // 💡 Safely extracts the new description field from database payload
+            description: c.description || "", 
+            image_url: c.image?.url || c.image_url || c.imageUrl || "",
+            // 💡 Maps 'issueDate' from schema safely down to frontend component 'date'
+            date: c.issueDate || c.date || "",
+            // 💡 Captured and embedded your credential links parameter safely 
+            credentialLink: c.credentialLink || ""
           }));
           setCerts(mappedCerts);
         } else {
@@ -56,6 +58,8 @@ export default function CertificationsPage() {
   return (
     <main className="grid-bg min-h-screen px-6 py-16 sm:px-12 md:px-24 flex flex-col items-center">
       <div className="mx-auto max-w-7xl w-full space-y-12">
+        
+        {/* Header Block */}
         <div className="text-center space-y-3">
           <h1 className="text-4xl font-black tracking-tight text-foreground sm:text-5xl">
             Certifications & <span className="text-primary">credentials</span>
@@ -66,28 +70,28 @@ export default function CertificationsPage() {
           <div className="mx-auto h-1 w-16 bg-primary rounded-full mt-2" />
         </div>
 
-        {/* Loading Skeleton */}
+        {/* Dynamic Display Grid */}
         {loading ? (
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 pt-6">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-[420px] rounded-3xl bg-muted/30 animate-pulse border border-border" />
+              <div key={i} className="h-[440px] rounded-3xl bg-muted/30 animate-pulse border border-border" />
             ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 pt-6">
-            {certs.map((cert) => (
+            {certs.map((cert: any) => (
               <div
                 key={cert.id}
-                className="group flex flex-col rounded-3xl border border-border bg-card/40 backdrop-blur-md overflow-hidden min-h-[420px] transition-all duration-300 hover:-translate-y-2 hover:border-primary/40 hover:shadow-2xl"
+                className="group flex flex-col rounded-3xl border border-border bg-card/40 backdrop-blur-md overflow-hidden min-h-[440px] transition-all duration-300 hover:-translate-y-2 hover:border-primary/40 hover:shadow-2xl"
               >
-                {/* FIX: Read from cert.image.url for the handlers and elements below */}
+                {/* Visual Thumbnail */}
                 <div 
-                  onClick={() => openCertModal(cert.image.url)} 
+                  onClick={() => openCertModal(cert.image_url)} 
                   className="relative h-56 w-full bg-accent/5 flex items-center justify-center overflow-hidden cursor-zoom-in"
                 >
-                  {cert.image?.url ? ( 
+                  {cert.image_url ? ( 
                     <Image
-                      src={cert.image.url} 
+                      src={cert.image_url} 
                       alt={cert.title}
                       fill
                       unoptimized={true} 
@@ -95,13 +99,14 @@ export default function CertificationsPage() {
                       className="object-cover transform transition-transform duration-500 group-hover:scale-105"
                     />
                   ) : (
-                    <div className="text-muted-foreground/40 text-xs">No Asset Rendered</div>
+                    <div className="text-muted-foreground/40 text-xs">No Image Available</div>
                   )}
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                     <HiZoomIn className="h-10 w-10 text-white" />
                   </div>
                 </div>
 
+                {/* Content Core details */}
                 <div className="p-6 flex-1 flex flex-col justify-between">
                   <div className="space-y-3">
                     <h3 className="text-xl font-bold text-foreground tracking-tight group-hover:text-primary transition-colors">
@@ -110,28 +115,45 @@ export default function CertificationsPage() {
                     <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-accent/20 border border-accent/30 text-primary w-fit inline-block">
                       {cert.issuer}
                     </span>
-                    <p className="text-sm text-muted-foreground pt-2 line-clamp-3">
-                      {cert.description}
+                    
+                    {/* Description Paragraph shows up here smoothly now */}
+                    <p className="text-sm text-muted-foreground pt-1 line-clamp-3">
+                      {cert.description || "No validation description provided for this credential entry."}
                     </p>
                   </div>
 
-                  <div className="text-xs text-muted-foreground pt-4 border-t border-border/30 mt-4">
-                    {cert.date}
+                  {/* Date & Credential Link Row */}
+                  <div className="flex items-center justify-between text-xs text-muted-foreground pt-4 border-t border-border/30 mt-4">
+                    <span>{cert.date}</span>
+                    
+                    {cert.credentialLink && (
+                      <a 
+                        href={cert.credentialLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 font-bold text-primary hover:underline"
+                        onClick={(e) => e.stopPropagation()} // Prevents launching image modal overlay on link clicks
+                      >
+                        Verify <FaExternalLinkAlt className="h-2.5 w-2.5" />
+                      </a>
+                    )}
                   </div>
                 </div>
+
               </div>
             ))}
           </div>
         )}
 
+        {/* Empty Fallback Block */}
         {!loading && certs.length === 0 && (
           <div className="text-center py-16 text-muted-foreground text-sm">
-            No certification documents uploaded to the database yet.
+            No certificates found in the database.
           </div>
         )}
       </div>
 
-      {/* Modal Container */}
+      {/* Lightbox Modal */}
       {selectedCert && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-6" onClick={closeCertModal}>
           <button className="absolute top-6 right-6 text-white text-3xl hover:text-primary transition-colors" onClick={closeCertModal}>&times;</button>

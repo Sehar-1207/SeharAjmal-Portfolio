@@ -20,20 +20,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const isLoginPage = pathname === '/admin/login'
 
-  // Handles cookie purge completely inline via browser document manipulation
-  const handleLogout = () => {
-    try {
-      // Wipes out the admin session tracking token client side instantly
-      document.cookie = "admin_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict;"
-      
-      // Forces immediate router sync back to login page
-      router.refresh()
-      router.push('/admin/login')
-    } catch (err) {
-      console.error("Logout execution exception:", err)
-    }
-  }
+// Handles cookie purge inline via browser document manipulation AND api call
+const handleLogout = async () => {
+  try {
+    await fetch('/admin/logout', { method: 'POST' }).catch(() => {
+    })
 
+    document.cookie = "admin_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict;"
+    
+    router.refresh()
+    router.push('/admin/login')
+  } catch (err) {
+    console.error("Logout execution exception:", err)
+  }
+}
   if (isLoginPage) return <main className="flex min-h-screen items-center justify-center">{children}</main>
 
   return (
@@ -60,7 +60,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <RxExternalLink className="h-5 w-5" />
               <span className="text-sm font-medium">Back to Website</span>
             </Link>
-            <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-destructive hover:bg-destructive/10 transition w-full">
+            <button onClick={handleLogout} className="cursor-pointer flex items-center gap-3 px-4 py-2.5 rounded-xl text-destructive hover:bg-destructive/10 transition w-full">
               <RxLockOpen2 className="h-5 w-5" />
               <span className="text-sm font-medium">Logout</span>
             </button>

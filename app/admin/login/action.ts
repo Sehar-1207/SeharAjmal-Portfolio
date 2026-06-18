@@ -1,60 +1,53 @@
 "use server"
 
-import dbConnect from "../../lib/mongodb"
+import dbConnect from "@/app/lib/mongodb" 
+import mongoose, { Model } from "mongoose" // 👈 Imported Model for explicit type-casting
+import { IAdminDocument } from "@/app/models/admin" // 👈 Make sure to export your interface from model.ts
 import { cookies } from "next/headers"
-import bcrypt from "bcryptjs"
-import { Admin, IAdminDocument } from "../../lib/model" // 👈 Added explicit interface import
-import { SignJWT } from "jose"
-
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
 
 export async function loginAdmin(formData: FormData) {
   try {
-    const rawEmail = formData.get("email");
-    const rawPassword = formData.get("password");
+    const email = formData.get("email") as string
+    const password = formData.get("password") as string
 
-    // 1. Validate existence and type up front to clear TypeScript errors
-    if (!rawEmail || !rawPassword || typeof rawEmail !== "string" || typeof rawPassword !== "string") {
-      return { success: false, error: "Please fill in all fields." }
+    if (!email || !password) {
+      return { success: false, error: "Please provide both email and password." }
     }
 
-    const email = rawEmail.toLowerCase().trim();
-    const password = rawPassword.trim();
-
+    // 1. Establish Mongoose connection
     await dbConnect()
-
-    // 2. Strongly-type the query to resolve internal schema mismatches
-    const admin = await Admin.findOne<IAdminDocument>({ email })
-    if (!admin) {
-      return { success: false, error: "Invalid email or password." } 
-    }
-
-    // 3. Compare the hashed password safely
-    const isPasswordMatch = await bcrypt.compare(password, admin.password)
-    if (!isPasswordMatch) {
-      return { success: false, error: "Invalid email or password." }
-    }
-
-    // 4. Create Encrypted JWT Token
-    const token = await new SignJWT({ adminId: admin._id.toString() })
-      .setProtectedHeader({ alg: "HS256" })
-      .setIssuedAt()
-      .setExpirationTime("1d")
-      .sign(JWT_SECRET);
-
-    const cookieStore = await cookies()
     
-    cookieStore.set("admin_session", token, {
+    // 2. Safe Model Retrieval with Explicit Typing 
+    // We explicitly cast it as a Model containing your IAdminDocument layout
+    const AdminModel = (mongoose.models.Admin || (await import("@/app/models/admin")).Admin) as Model<IAdminDocument>;
+
+    // 3. Find matching admin document (TypeScript will now recognize { email } perfectly!)
+    const admin = await AdminModel.findOne({ email: email.toLowerCase() })
+
+    if (!admin) {
+      return { success: false, error: "Invalid email or security key connection." }
+    }
+
+    // 4. Password Verification
+    const isPasswordValid = admin.password === password
+
+    if (!isPasswordValid) {
+      return { success: false, error: "Invalid email or security key connection." }
+    }
+
+    // 5. Assign standard secure session cookie
+    const cookieStore = await cookies()
+    cookieStore.set("admin_session", "true", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 60 * 60 * 24, // 1 day
+      maxAge: 60 * 60 * 24, 
       path: "/",
     })
 
     return { success: true }
   } catch (error: any) {
-    console.error("Login Error:", error)
-    return { success: false, error: "An unexpected error occurred." }
+    console.error("Login Server Action Error Trace:", error)
+    return { success: false, error: error.message || "An expected cloud query exception occurred." }
   }
 }

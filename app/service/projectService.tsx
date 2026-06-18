@@ -1,12 +1,11 @@
 'use server'
 
-import dbConnect from '../lib/mongodb'
-import { Project } from '../lib/model'
-import { deleteFile } from '../lib/uploadImage'
+import dbConnect from '@/app/lib/mongodb'
+import { ProjectModel } from '@/app/models/projects'
+import { deleteFile } from '@/app/lib/cloudinary'
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 
-// Authorization Helper
 async function checkAuth() {
   const cookieStore = await cookies()
   if (!cookieStore.has('admin_session')) {
@@ -14,79 +13,68 @@ async function checkAuth() {
   }
 }
 
-// 1. FETCH ALL PROJECTS (Sorted by drag-and-drop order)
+// ---------------- FETCH ----------------
 export async function getProjects() {
   try {
     await dbConnect()
-    
-    // Cast to any to bypass Mongoose generic query parameter typing bugs
-    const projectModel = Project as any
-    const projects = await projectModel.find({}).sort({ order: 1 }).lean()
-    
-    return { success: true, data: JSON.parse(JSON.stringify(projects)) }
+    const projects = await ProjectModel.find().sort({ order: 1 }).lean()
+    return { success: true, data: JSON.parse(JSON.stringify(projects)), error: null }
   } catch (error: any) {
-    return { success: false, error: error.message || 'Failed to fetch projects' }
+    return { success: false, data: null, error: error.message || 'Failed to fetch projects' }
   }
 }
 
-// 2. ADD NEW PROJECT
+// ---------------- ADD ----------------
 export interface AddProjectInput {
-  title: string;
-  description: string;
-  category: "frontend" | "backend" | "automation" | "app-development";
-  image: { url: string; publicId: string };
-  projectLink?: string;
-  githubLink?: string;
-  tags: string[];
+  title: string
+  description: string
+  category: "frontend" | "backend" | "automation" | "app-development"
+  image: { url: string; publicId: string }
+  projectLink?: string
+  githubLink?: string
+  tags: string[]
 }
 
 export async function addProject(data: AddProjectInput) {
   try {
     await checkAuth()
     await dbConnect()
-    
-    // Cast to any to allow clean chaining of .sort() and .lean() without error
-    const projectModel = Project as any
-    const highestOrderProject = await projectModel.findOne({}).sort({ order: -1 }).lean()
-    const nextOrder = highestOrderProject ? highestOrderProject.order + 1 : 0
 
-    const newProject = new Project({
-      ...data,
-      order: nextOrder
-    })
+    const highestOrderProject = await ProjectModel.findOne().sort({ order: -1 }).lean()
+    const nextOrder = highestOrderProject ? (highestOrderProject as any).order + 1 : 0
 
-    await newProject.save()
-    revalidatePath('/') 
-    return { success: true }
+    await ProjectModel.create({ ...data, order: nextOrder })
+
+    revalidatePath('/')
+    revalidatePath('/admin/projects')
+    return { success: true, error: null }
   } catch (error: any) {
-    return { success: false, error: error.message }
+    console.error('addProject error:', error)
+    return { success: false, error: error.message || 'Failed to add project' }
   }
 }
 
-// 3. UPDATE AN EXISTING PROJECT
+// ---------------- UPDATE ----------------
 export async function updateProject(id: string, data: Partial<AddProjectInput>) {
   try {
     await checkAuth()
     await dbConnect()
-
-    // Cast to any to fix the "This expression is not callable" union type error
-    const projectModel = Project as any
-    await projectModel.findByIdAndUpdate(id, { $set: data })
-    
+    await ProjectModel.findByIdAndUpdate(id, { $set: data })
     revalidatePath('/')
-    return { success: true }
+    revalidatePath('/admin/projects')
+    return { success: true, error: null }
   } catch (error: any) {
-    return { success: false, error: error.message }
+    console.error('updateProject error:', error)
+    return { success: false, error: error.message || 'Failed to update project' }
   }
 }
 
-// 4. DRAG AND DROP REORDERING ACTIONS
+// ---------------- REORDER ----------------
 export async function reorderProjects(orderedIds: string[]) {
   try {
     await checkAuth()
     await dbConnect()
-    
-    const projectModel = Project as any
+
     const bulkOps = orderedIds.map((id, index) => ({
       updateOne: {
         filter: { _id: id },
@@ -94,28 +82,36 @@ export async function reorderProjects(orderedIds: string[]) {
       },
     }))
 
-    await projectModel.bulkWrite(bulkOps)
+    await ProjectModel.bulkWrite(bulkOps)
     revalidatePath('/')
-    return { success: true }
+    revalidatePath('/admin/projects')
+    return { success: true, error: null }
   } catch (error: any) {
-    return { success: false, error: error.message }
+    console.error('reorderProjects error:', error)
+    return { success: false, error: error.message || 'Failed to reorder projects' }
   }
 }
 
-// 5. DELETE A PROJECT
+// ---------------- DELETE ----------------
 export async function deleteProject(id: string, publicId: string) {
   try {
     await checkAuth()
     await dbConnect()
-    
-    await deleteFile(publicId, 'image')
-    
-    const projectModel = Project as any
-    await projectModel.findByIdAndDelete(id)
-    
+
+    if (publicId) {
+      const cloudResult = await deleteFile(publicId, 'image')
+      if (!cloudResult.success) {
+        console.warn('Cloudinary delete issue:', cloudResult.error)
+      }
+    }
+
+    await ProjectModel.findByIdAndDelete(id)
+
     revalidatePath('/')
-    return { success: true }
+    revalidatePath('/admin/projects')
+    return { success: true, error: null }
   } catch (error: any) {
-    return { success: false, error: error.message }
+    console.error('deleteProject error:', error)
+    return { success: false, error: error.message || 'Failed to delete project' }
   }
 }

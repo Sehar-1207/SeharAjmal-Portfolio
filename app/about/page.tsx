@@ -2,12 +2,20 @@
 import React from "react";
 import Image from "next/image";
 import { FaReact, FaJsSquare, FaHtml5, FaCss3Alt, FaNodeJs, FaPython, FaGitAlt, FaGithub, FaJira, FaDatabase } from "react-icons/fa";
-import { SiDotnet, SiSharp, SiExpress, SiMongodb, SiFirebase, SiPostman, SiN8N, SiFlutter, SiTailwindcss,SiSupabase } from "react-icons/si";
+import { SiDotnet, SiSharp, SiExpress, SiMongodb, SiFirebase, SiPostman, SiN8N, SiFlutter, SiTailwindcss, SiSupabase, SiOpenai } from "react-icons/si";
 import { HiSparkles } from "react-icons/hi2";
-import { Layers, Wrench } from "lucide-react";
+import { Layers, Bot, BrainCircuit, Workflow } from "lucide-react";
 import ve1 from '../../public/assets/ve1.png';
 
 const skillCategories = [
+  {
+    title: "AI Engineering & Agents", 
+    skills: [
+      { name: "AI Agents", icon: Bot, color: "text-purple-400", hoverBorder: "hover:border-purple-400/30" },
+      { name: "RAG Architecture", icon: BrainCircuit, color: "text-teal-400", hoverBorder: "hover:border-teal-400/30" },
+      { name: "Python (LLM Orchestration)", icon: FaPython, color: "text-yellow-500", hoverBorder: "hover:border-yellow-500/30" },
+    ],
+  },
   {
     title: "Frontend & Mobile",
     skills: [
@@ -25,24 +33,23 @@ const skillCategories = [
       { name: "ASP.NET Core", icon: SiDotnet, color: "text-purple-500", hoverBorder: "hover:border-purple-500/30" },
       { name: "C#", icon: SiSharp, color: "text-green-600", hoverBorder: "hover:border-green-600/30" },
       { name: "Node.js", icon: FaNodeJs, color: "text-green-500", hoverBorder: "hover:border-green-500/30" },
-      { name: "Python", icon: FaPython, color: "text-yellow-500", hoverBorder: "hover:border-yellow-500/30" },
       { name: "Express", icon: SiExpress, color: "text-neutral-400 dark:text-neutral-100", hoverBorder: "hover:border-neutral-400/30" },
     ],
   },
   {
-    title: "Database",
-  skills: [
-    { name: "MongoDB", icon: SiMongodb, color: "text-green-500", hoverBorder: "hover:border-green-500/30" },
-    { name: "SQL Server", icon: FaDatabase, color: "text-red-500", hoverBorder: "hover:border-red-500/30" },
-    { name: "Firebase", icon: SiFirebase, color: "text-amber-500", hoverBorder: "hover:border-amber-500/30" },
-    { name: "Supabase", icon: SiSupabase, color: "text-emerald-500", hoverBorder: "hover:border-emerald-500/30" },
-    { name: "Vector Database", icon: Layers, color: "text-indigo-400", hoverBorder: "hover:border-indigo-400/30" },
-  ],
+    title: "Database & Knowledge Bases", // 💡 Refactored title to match AI contexts
+    skills: [
+      { name: "Vector Databases", icon: Layers, color: "text-indigo-400", hoverBorder: "hover:border-indigo-400/30" }, // 🧠 Vital for RAG!
+      { name: "MongoDB", icon: SiMongodb, color: "text-green-500", hoverBorder: "hover:border-green-500/30" },
+      { name: "SQL Server", icon: FaDatabase, color: "text-red-500", hoverBorder: "hover:border-red-500/30" },
+      { name: "Supabase", icon: SiSupabase, color: "text-emerald-500", hoverBorder: "hover:border-emerald-500/30" },
+      { name: "Firebase", icon: SiFirebase, color: "text-amber-500", hoverBorder: "hover:border-amber-500/30" },
+    ],
   },
   {
     title: "Automation & Tools",
     skills: [
-      { name: "n8n", icon: SiN8N, color: "text-red-400", hoverBorder: "hover:border-red-400/30" },
+      { name: "n8n (AI Workflows)", icon: SiN8N, color: "text-red-400", hoverBorder: "hover:border-red-400/30" }, // 🤖 n8n handles node-based agents incredibly well
       { name: "Git", icon: FaGitAlt, color: "text-orange-600", hoverBorder: "hover:border-orange-600/30" },
       { name: "GitHub", icon: FaGithub, color: "text-foreground", hoverBorder: "hover:border-foreground/30" },
       { name: "Postman", icon: SiPostman, color: "text-orange-500", hoverBorder: "hover:border-orange-500/30" },
@@ -60,21 +67,16 @@ export default function AboutPage() {
           <div className="flex flex-col space-y-4 max-w-2xl">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">About</span>
             <h1 className="text-4xl font-black tracking-tight text-foreground sm:text-5xl uppercase relative pb-2 w-fit">
-              Know Who I'm
+              Know Who I Am
               <span className="absolute bottom-0 left-0 h-1 w-16 bg-primary rounded-full" />
             </h1>
             <div className="text-muted-foreground space-y-4 text-md leading-relaxed pt-4">
-              <p>"I'm a passionate developer who loves transforming ideas into polished, performant products. From building delightful interfaces to architecting backend services, I obsess over code quality. I believe that great software is as much about the human experience as it is about the underlying logic, which is why my approach blends clean, maintainable architecture with a relentless focus on user-centric design. Whether it's optimizing a complex data flow or sweating the smallest UI detail, I’m committed to building solutions that grow alongside your vision."</p>
+              <p>I'm a passionate developer who loves transforming ideas into polished, performant products. From building intelligent autonomous agents and RAG pipelines using Python to architecting reliable backend services and delightful interfaces, I obsess over code quality. I believe that great software is as much about the human experience as it is about the underlying logic, which is why my approach blends clean, maintainable architecture with a relentless focus on user-centric design.</p>
             </div>
           </div>
           <div className="relative flex items-center justify-center lg:w-1/2">
-            {/* Wrapper for the floating animation */}
-            <div className="animate-float  w-full max-w-lg">
-
-              {/* Decorative blur effect behind the image */}
+            <div className="animate-float w-full max-w-lg">
               <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl animate-blob opacity-70" />
-
-              {/* Image Component */}
               <Image
                 src={ve1}
                 alt="Hero Visual"
